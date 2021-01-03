@@ -1,0 +1,2 @@
+idf_component_register(SRCS "websocket.c" "battery_monitor.c" "websocket_server.c" "booth_main.c" "wifimanager.c" "booth_server.c" "resprate.c" "heartrate.c" "temperature.c" "i2c.c" "MLX90614_API.c" "led_notification.c" "MLX90614_SMBus_Driver.c"
+                    INCLUDE_DIRS ".")
