@@ -19,11 +19,12 @@
 #include "driver/i2c.h"
 #include "sdkconfig.h"
 
+#include "i2c.h"
+
 
 
 
 #define I2C_ADDR_MAX30102      0x57 //max30102 i2c address
-#define i2c_port                  0
 #define i2c_frequency       400000
 #define i2c_gpio_sda             21
 #define i2c_gpio_scl             22

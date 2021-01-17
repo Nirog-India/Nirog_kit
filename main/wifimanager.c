@@ -29,7 +29,7 @@
 #define FILE_PATH_MAX (ESP_VFS_PATH_MAX + CONFIG_SPIFFS_OBJ_NAME_LEN)
 
 /* GPIO PIN to indicate WIFI status */
-#define WIFISTATUS_GPIO 02
+#define WIFISTATUS_GPIO 14
 
 /* Max size of an individual file. Make sure this
  * value is same as that set in upload_script.html */
@@ -125,6 +125,7 @@ esp_err_t connect_wifi_to_station(char *ssid, char *password) {
     wifiConnected = 0;
     esp_wifi_connect();
     toggle_wifi_status_led();
+
     /* Send a simple response */
     return ESP_OK;
 }
