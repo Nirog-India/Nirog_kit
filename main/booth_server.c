@@ -59,7 +59,7 @@ bool finger_not_placed = true;
 #define ERROR_ACK_MSG_CODE "ERROR"
 
 #define NUM_RECORDS 500
-static heap_trace_record_t trace_record[NUM_RECORDS];
+// static heap_trace_record_t trace_record[NUM_RECORDS];
 
 bool is_pinging = false;
 enum LED led1[3] = {RED1_LED,BLUE1_LED,GREEN1_LED};
@@ -276,7 +276,7 @@ static void ping(struct netconn *conn) {
                   CODE = DISCONNECT;
                   }
                 if(strcmp(event_code->valuestring,PING_MSG_CODE) == 0){
-                  ESP_LOGI(TAG,"\n Ping received");
+                  // ESP_LOGI(TAG,"\n Ping received");
                   
                   msg_recv_timestamp = esp_timer_get_time();
                   // if(strcmp(message->valuestring,ping_msg_code) == 0){
@@ -290,9 +290,9 @@ static void ping(struct netconn *conn) {
           }
           /////////////////////////////////////////////////////////////          
         }
-        else{
-          ESP_LOGE(TAG,"NETCONN RECV ERROR CODE : %d",err);
-        }
+        // else{
+        //   ESP_LOGE(TAG,"NETCONN RECV ERROR CODE : %d",err);
+        // }
         // netbuf_free(inbuf);
         if(CODE == READ_OXYGEN_HEARTRATE && finger_not_placed){
             char oxymeter_warning[128];
@@ -312,7 +312,7 @@ static void ping(struct netconn *conn) {
         curr_time = esp_timer_get_time();
         if((curr_time - prev_time)/5000000.0f>1)
         {
-          ESP_LOGI(TAG,"\n time bc : %f",(curr_time - prev_time)/1000000.0f);
+          // ESP_LOGI(TAG,"\n time bc : %f",(curr_time - prev_time)/1000000.0f);
           prev_time = curr_time;
           xQueueSendToBack(message_queue,&ping_msg,portMAX_DELAY);          
         }
@@ -337,24 +337,24 @@ static void http_serve(struct netconn *conn) {
   char post_data[128];
   float temp_reading = 0;
   oxy_reading oxy_result;
-  ESP_ERROR_CHECK( heap_trace_start(HEAP_TRACE_LEAKS) );
+  // ESP_ERROR_CHECK( heap_trace_start(HEAP_TRACE_LEAKS) );
   netconn_set_recvtimeout(conn,1000); // allow a connection timeout of 1 second
   ESP_LOGI(TAG,"reading from client..."); 
   while(conn_alive){
     // err = netconn_recv(conn, &inbuf);
     
     //printf("Battery Level: %d\n",raw_bat_reading);
-    if(raw_bat_reading <2000)
-    {
-      ESP_LOGI(TAG,"Low battery");
-    }
+    // if(raw_bat_reading <2000)
+    // {
+    //   ESP_LOGI(TAG,"Low battery");
+    // }
 
     if(CODE == READ_OXYGEN_HEARTRATE){
         oxy_result = oxy_handler();
         char oxymeter_response[256]; 
         sprintf(oxymeter_response,"{\"CODE\": %s,\"MESSAGE\" : {\"HR\" : %3.1f , \"SPO\" : %3.1f}}",TAKE_OXY_READING,oxy_result.finalheartRate,oxy_result.oxygenLevel);
 
-        ESP_LOGI(TAG,"\nHeart rate is %3.1f Spo2 is %3.1f",oxy_result.finalheartRate,oxy_result.oxygenLevel);
+        // ESP_LOGI(TAG,"\nHeart rate is %3.1f Spo2 is %3.1f",oxy_result.finalheartRate,oxy_result.oxygenLevel);
         // netconn_write(conn, oxymeter_response,strlen(oxymeter_response),NETCONN_COPY);
         xQueueSendToBack(message_queue,&oxymeter_response,portMAX_DELAY);
 
@@ -380,7 +380,7 @@ static void http_serve(struct netconn *conn) {
         sprintf(report,"{\"NAME\":\"%s\",\"PHONE\":\"%s\",\"HR\":%3.1f,\"SPO\":%3.1f,\"TEMPERATURE\":%f,\"STATUS\":%d}",name,phno,oxy_result.finalheartRate,oxy_result.oxygenLevel,temp_reading,push_status);
         sprintf(disconnect_response,"{\"CODE\":%s,\"MESSAGE\":%s}",DISCONNECT_MSG_CODE,report);
         ESP_LOGI(TAG,"%s",report);
-        ESP_LOGI(TAG,"%s", disconnect_response);
+        // ESP_LOGI(TAG,"%s", disconnect_response);
         xQueueSendToBack(message_queue,&disconnect_response,portMAX_DELAY);                  
         conn_alive = false;
         break;
@@ -388,8 +388,8 @@ static void http_serve(struct netconn *conn) {
     vTaskDelay(100/portTICK_PERIOD_MS);
   }
   ESP_LOGI(TAG,"Session break. Mem %d",xPortGetFreeHeapSize());
-      ESP_ERROR_CHECK( heap_trace_stop() );
-    heap_trace_dump();
+      // ESP_ERROR_CHECK( heap_trace_stop() );
+    // heap_trace_dump();
 }
 
 
@@ -418,7 +418,7 @@ static void server_task(void* pvParameters) {
   } while(err == ERR_OK);
   netconn_close(conn);
   netconn_delete(conn);
-  ESP_LOGE(TAG,"task ending, rebooting board");
+  // ESP_LOGE(TAG,"task ending, rebooting board");
   // esp_restart();
 }
 
@@ -467,7 +467,7 @@ static void count_task(void* pvParameters) {
   uint8_t n = 0;
   const int DELAY = 1000 / portTICK_PERIOD_MS; // 1 second
 
-  ESP_LOGI(TAG,"starting task");
+  // ESP_LOGI(TAG,"starting task");
   for(;;) {
     len = sprintf(out,word,n);
     clients = ws_server_send_text_all(out,len);
@@ -481,9 +481,9 @@ static void count_task(void* pvParameters) {
 
 bool start_webserver(void) {
     
-    ESP_LOGI(TAG, "Starting Wifi API websocket server");
+    // ESP_LOGI(TAG, "Starting Wifi API websocket server");
 
-    ESP_ERROR_CHECK( heap_trace_init_standalone(trace_record, NUM_RECORDS) );
+    // ESP_ERROR_CHECK( heap_trace_init_standalone(trace_record, NUM_RECORDS) );
 
     ws_server_start();
     xTaskCreate(&server_task,"server_task",3000,NULL,9,NULL);

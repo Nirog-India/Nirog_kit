@@ -100,6 +100,7 @@ void max30102_task () {
         heart_read_err[i] = 20.0;       
         error_arr[i] = 10.0;
         hrarray[i] = 40.0;
+        hr_avg_arr[i] = 40 - (i*20); 
     }
     heartsum = 0;
     oxysum = 0;    
@@ -169,7 +170,7 @@ void max30102_task () {
       
             for(int i=0;i<4;i++) del[i] = del[i+1];
             del[4] = red_avg[9]-red_avg[8];
-            // printf("\nDel: %f",del[4]);
+            // ESP_LOGI(TAG,"Del: %f",del[4]);
             if(!peak_detected){
                 peak_detected = true;
             for(int i=0;i<5;i++){
@@ -179,19 +180,23 @@ void max30102_task () {
                 peaks_detected++;
             if(peaks_detected >=1){
                 curr_time = esp_timer_get_time();
-                float hr = 60000000.0f * peaks_detected/(curr_time - prev_time);
+                float hr = (60000000.0f * peaks_detected)/(curr_time - prev_time);
                 // printf("\nHR: %f ; Time diff %d",hr,(int)(curr_time)-(int)(prev_time));                   
                 peaks_detected = 0;
                 prev_time = esp_timer_get_time();
-                for(int i = 0;i<4;i++){
-						hrarray[i] = hrarray[i+1];	
-                        hr_avg_arr[i] = hr_avg_arr[i+1];					
-					}
+                if(hr>1.0){
+                    if(hr>200) hr = 200.0;
+                    for(int i = 0;i<4;i++){
+                            hrarray[i] = hrarray[i+1];	
+                            hr_avg_arr[i] = hr_avg_arr[i+1];					
+                        }
+                
                 hrarray[4] = hr;
                 hr_avg = (hrarray[0] + hrarray[1] + hrarray[2] + hrarray[3] + hrarray[4])/5.0f;					
                 hr_avg_arr[4] = hr_avg;
+                    }
                 }
-            }         
+            }
         }
             else if(del[0]>0)peak_detected = false;
                   
@@ -211,7 +216,7 @@ void max30102_task () {
         else{            
             finger_not_placed = true;            
             prev_reading_time = esp_timer_get_time();
-        }
+            }
         if(count>=10){
             valid_count++;                  
             // spo calculations
@@ -241,12 +246,12 @@ void max30102_task () {
                 }                
                 error = err_avg;
                 oxy_read_complete = true;
-                ESP_LOGI(TAG,"\nOxym reading time: %3.2f",(curr_reading_time-prev_reading_time)/1000000.0f);
+                // ESP_LOGI(TAG,"\nOxym reading time: %3.2f",(curr_reading_time-prev_reading_time)/1000000.0f);
             }
             if(heart_err_avg <= 1 && !heart_read_complete){
                 heartsum = (hr_avg_arr[0] + hr_avg_arr[1] + hr_avg_arr[2] + hr_avg_arr[3] + hr_avg_arr[4])/5.0f;
                 hearterror = heart_err_avg;					
-                ESP_LOGI(TAG,"\nHeart reading time: %3.2f",(curr_reading_time-prev_reading_time)/1000000.0f);
+                // ESP_LOGI(TAG,"\nHeart reading time: %3.2f",(curr_reading_time-prev_reading_time)/1000000.0f);
                 heart_read_complete = true;
         }
             // }
