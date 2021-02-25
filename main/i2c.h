@@ -1,6 +1,6 @@
 #ifndef _I2C_
 #define _I2C_
-#define i2c_port                  0
+#define i2c_port                  1
 
 esp_err_t i2c_init();
 int i2cdetect();

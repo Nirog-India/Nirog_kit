@@ -36,6 +36,7 @@
 #include "resprate.h"
 #include "battery_monitor.h"
 #include "led_notification.h"
+#include "reading.h"
 
 #include "lwip/api.h"
 #include "websocket_server.h"
@@ -50,8 +51,7 @@ bool conn_alive;
 bool finger_not_placed = true;
 
 #define END_OF_MESSAGE "_EOM_"
-#define TAKE_OXY_READING "OXYMETER"
-#define TAKE_TEMP_READING "THERMOMETER"
+#define READING_TAG "TAKE_READING"
 #define CONNECT_WIFI "WIFI"
 #define DETAILS "DETAILS"
 #define DISCONNECT_MSG_CODE "DISCONNECT"
@@ -67,8 +67,7 @@ enum LED led2[3] = {RED2_LED,BLUE2_LED,GREEN2_LED};
 
 enum READING_CODE{
   IDLE,
-  READ_OXYGEN_HEARTRATE,
-  READ_TEMPERATURE,
+  TAKE_READING,
   DISCONNECT
 }CODE;
 
@@ -153,7 +152,7 @@ const static int client_queue_size = 10;
 
 float temp_handler() {
     blink_led_start(LED_GRP1,true,true,false);
-    float temp= get_temperature();
+    float temp= 0;
     blink_led_stop();
     ESP_LOGI(TAG,"Temperature is : %f",temp);
     return temp;
@@ -161,13 +160,6 @@ float temp_handler() {
 
 // char post_data[50];
 
-oxy_reading oxy_handler() {
-    
-    blink_led_start(LED_GRP1,false,true,true);
-    oxy_reading oxymeter_reading = get_oxy_result();
-    blink_led_stop();
-    return oxymeter_reading;
-}
 
 int64_t msg_recv_timestamp = 0;
 
@@ -250,11 +242,8 @@ static void ping(struct netconn *conn) {
                   cJSON_Delete(details_root);
 
                 }
-                if(strcmp(event_code->valuestring,TAKE_OXY_READING) == 0){
-                  CODE = READ_OXYGEN_HEARTRATE;
-                }
-                if(strcmp(event_code->valuestring,TAKE_TEMP_READING) == 0){
-                  CODE = READ_TEMPERATURE;
+                if(strcmp(event_code->valuestring,READING_TAG) == 0){
+                  CODE = TAKE_READING;
                 }
                 if(strcmp(event_code->valuestring,CONNECT_WIFI) == 0){
                   char wifi_response[256];
@@ -294,7 +283,7 @@ static void ping(struct netconn *conn) {
         //   ESP_LOGE(TAG,"NETCONN RECV ERROR CODE : %d",err);
         // }
         // netbuf_free(inbuf);
-        if(CODE == READ_OXYGEN_HEARTRATE && finger_not_placed){
+        if(CODE == TAKE_READING && finger_not_placed){
             char oxymeter_warning[128];
             ESP_LOGI(TAG,"Finger not placed!!!");
             sprintf(oxymeter_warning,"{\"CODE\": %s,\"MESSAGE\" : \"ERR_OXY_FINGER_NOT_PLACED\" }",ERROR_ACK_MSG_CODE);
@@ -304,7 +293,6 @@ static void ping(struct netconn *conn) {
           char msg_buf[recv_msg_len];
           xQueueReceive(message_queue,&msg_buf,portMAX_DELAY);
           strcat(msg_buf,END_OF_MESSAGE);
-          // printf("\n netconn write message : %s",msg_buf);
           netconn_write(conn, msg_buf,strlen(msg_buf),NETCONN_COPY);
           if(!conn_alive) isDisconnect = true;
           vTaskDelay(1000/portTICK_PERIOD_MS);
@@ -336,7 +324,7 @@ static void http_serve(struct netconn *conn) {
 
   char post_data[128];
   float temp_reading = 0;
-  oxy_reading oxy_result;
+  reading read;
   // ESP_ERROR_CHECK( heap_trace_start(HEAP_TRACE_LEAKS) );
   netconn_set_recvtimeout(conn,1000); // allow a connection timeout of 1 second
   ESP_LOGI(TAG,"reading from client..."); 
@@ -349,35 +337,24 @@ static void http_serve(struct netconn *conn) {
     //   ESP_LOGI(TAG,"Low battery");
     // }
 
-    if(CODE == READ_OXYGEN_HEARTRATE){
-        oxy_result = oxy_handler();
-        char oxymeter_response[256]; 
-        sprintf(oxymeter_response,"{\"CODE\": %s,\"MESSAGE\" : {\"HR\" : %3.1f , \"SPO\" : %3.1f}}",TAKE_OXY_READING,oxy_result.finalheartRate,oxy_result.oxygenLevel);
-
-        // ESP_LOGI(TAG,"\nHeart rate is %3.1f Spo2 is %3.1f",oxy_result.finalheartRate,oxy_result.oxygenLevel);
-        // netconn_write(conn, oxymeter_response,strlen(oxymeter_response),NETCONN_COPY);
-        xQueueSendToBack(message_queue,&oxymeter_response,portMAX_DELAY);
-
-        led_success_notification();
-        CODE = IDLE;
-    }
-    if(CODE == READ_TEMPERATURE){
+    if(CODE == TAKE_READING){
         char temp_response[256];
-        temp_reading = temp_handler();
-        sprintf(temp_response,"{\"CODE\": %s,\"MESSAGE\" : %f }",TAKE_TEMP_READING,temp_reading);
-        // netconn_write(conn, temp_response,strlen(temp_response),NETCONN_COPY); 
+        read = take_reading();
+        printf("\n Reading values : \n Temperature : %f \n Oxy :%f \n Heart : %f",read.temperature,read.oxygenLevel,read.heartrate);
+        // temp_reading = temp_handler();
+        sprintf(temp_response,"{\"CODE\": %s,\"MESSAGE\" : {\"HR\" : %3.1f , \"SPO\" : %3.1f, \"TEMPERATURE\" : %3.1f}} }",READING_TAG,read.heartrate,read.oxygenLevel,read.temperature);
         xQueueSendToBack(message_queue,&temp_response,portMAX_DELAY);
         led_success_notification();
         CODE = IDLE;
     }    
     if(CODE == DISCONNECT){
         ESP_LOGI(TAG,"Reading completed . Pushing to Server .");            
-        sprintf(post_data,"temperature=%4.2f;heartrate=%3.1f;oxygen_level=%3.1f",temp_reading,oxy_result.finalheartRate,oxy_result.oxygenLevel); 
+        sprintf(post_data,"temperature=%4.2f;heartrate=%3.1f;oxygen_level=%3.1f",read.temperature,read.heartrate,read.oxygenLevel); 
         int push_status = ubidots_post(post_data);
         // int push_status = 0;
         char disconnect_response[512];
         char report[256];
-        sprintf(report,"{\"NAME\":\"%s\",\"PHONE\":\"%s\",\"HR\":%3.1f,\"SPO\":%3.1f,\"TEMPERATURE\":%f,\"STATUS\":%d}",name,phno,oxy_result.finalheartRate,oxy_result.oxygenLevel,temp_reading,push_status);
+        sprintf(report,"{\"NAME\":\"%s\",\"PHONE\":\"%s\",\"HR\":%3.1f,\"SPO\":%3.1f,\"TEMPERATURE\":%f,\"STATUS\":%d}",name,phno,read.heartrate,read.oxygenLevel,read.temperature,push_status);
         sprintf(disconnect_response,"{\"CODE\":%s,\"MESSAGE\":%s}",DISCONNECT_MSG_CODE,report);
         ESP_LOGI(TAG,"%s",report);
         // ESP_LOGI(TAG,"%s", disconnect_response);

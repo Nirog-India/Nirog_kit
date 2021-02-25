@@ -18,9 +18,10 @@
 #include "lwip/sys.h"
 #include <lwip/netdb.h>
 
+#include "heartrate.h"
 #include "driver/i2c.h"
 #include "sdkconfig.h"
-#include "heartrate.h"
+
 
 static const char *TAG = "Server";
 
@@ -38,10 +39,8 @@ int countedsamples = 0;
 int irpower = 0, rpower = 0, lirpower = 0, lrpower = 0;
 int startstop = 0, raworbp = 0;
 float heartrate=99.2, pctspo2=99.2;  
-bool isTaskCompleted = false; 
 float heartsum = 0,oxysum = 0,error = 0,hearterror = 0;
 int64_t time_since_start;
-
 
 void max30102_init() {
     uint8_t data;
@@ -55,9 +54,10 @@ void max30102_init() {
     i2c_write(I2C_ADDR_MAX30102, 0x0c, data);
     data = 0xa0;                //red pulse power
     i2c_write(I2C_ADDR_MAX30102, 0x0d, data);
+    isTaskCompleted = false; 
 }
 
-void max30102_task () {
+void take_oxy_reading() {
     
     
     int valid_count = 0;
@@ -287,15 +287,15 @@ void max30102_task () {
     }    
 
     isTaskCompleted  = true;
-     vTaskDelete(NULL);
+    vTaskDelete(NULL);
      
 }
 
 
 esp_timer_handle_t periodic_timer;
 
-
-void get_heartrate()
+void init_heartrate()
+// void get_heartrate()
 {
 
     i2c_init();
@@ -304,12 +304,16 @@ void get_heartrate()
     //configure max30102 with i2c instructions
     max30102_init();    
     // ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 2000));
-    xTaskCreate(max30102_task, "max30102_task", 4096, NULL, 10, NULL);
-    while(!isTaskCompleted){
-        vTaskDelay(10/portTICK_PERIOD_MS);             //Wait for readings
-    }
-    i2c_driver_delete(i2c_port);
+    // xTaskCreate(max30102_task, "max30102_task", 4096, NULL, 10, NULL);
+    // while(!isTaskCompleted){
+    //     vTaskDelay(10/portTICK_PERIOD_MS);             //Wait for readings
+    // }
+    // i2c_driver_delete(i2c_port);
 
+}
+
+void deinit_heartrate(){
+    i2c_driver_delete(i2c_port);
 }
 
 
@@ -334,7 +338,7 @@ void hr_timer_init(){
 oxy_reading get_oxy_result(){
 
     // hr_timer_init();
-    get_heartrate();
+    // get_heartrate();
 
     oxy_reading final_readings;
     final_readings.finalheartRate = heartsum;

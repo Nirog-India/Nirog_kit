@@ -7,16 +7,22 @@
 #include "MLX90614_API.h"
 #include "MLX90614_SMBus_Driver.h"
 
+#include "temperature.h"
+
 static const char *TAG = "Server";
 
 #define MLX90614_DEFAULT_ADDRESS 0x5a // default chip address(slave address) of MLX90614
 
-#define MLX90614_SDA_GPIO 21 // sda for MLX90614
-#define MLX90614_SCL_GPIO 22 // scl for MLX90614
+#define MLX90614_SDA_GPIO 4 // sda for MLX90614
+#define MLX90614_SCL_GPIO 5 // scl for MLX90614
 #define TIME_S 35
 const float temp_offset = 2;
-float get_temperature()
+
+
+void take_temperature()
 {
+    
+    temp_reading_complete = false;
    MLX90614_SMBusInit(MLX90614_SDA_GPIO, MLX90614_SCL_GPIO, 50000); // sda scl and 50kHz
 
     //Average out the readings
@@ -39,5 +45,9 @@ float get_temperature()
         count++;
     }
     close_connection();
-    return (obj_temp_sum/(count-11))+temp_offset;
+    temp_reading = (obj_temp_sum/(count-11))+temp_offset;
+    temp_reading_complete = true;
+    printf("\n Temp reading finished  : %f ",temp_reading);
+    vTaskDelete(NULL);
 }
+
