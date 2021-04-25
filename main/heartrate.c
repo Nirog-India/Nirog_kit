@@ -41,6 +41,7 @@ int startstop = 0, raworbp = 0;
 float heartrate=99.2, pctspo2=99.2;  
 float heartsum = 0,oxysum = 0,error = 0,hearterror = 0;
 int64_t time_since_start;
+bool finger_not_placed = true;
 
 void max30102_init() {
     uint8_t data;
@@ -170,7 +171,6 @@ void take_oxy_reading() {
       
             for(int i=0;i<4;i++) del[i] = del[i+1];
             del[4] = red_avg[9]-red_avg[8];
-            // ESP_LOGI(TAG,"Del: %f",del[4]);
             if(!peak_detected){
                 peak_detected = true;
             for(int i=0;i<5;i++){
@@ -181,7 +181,6 @@ void take_oxy_reading() {
             if(peaks_detected >=1){
                 curr_time = esp_timer_get_time();
                 float hr = (60000000.0f * peaks_detected)/(curr_time - prev_time);
-                // printf("\nHR: %f ; Time diff %d",hr,(int)(curr_time)-(int)(prev_time));                   
                 peaks_detected = 0;
                 prev_time = esp_timer_get_time();
                 if(hr>1.0){
@@ -246,22 +245,13 @@ void take_oxy_reading() {
                 }                
                 error = err_avg;
                 oxy_read_complete = true;
-                // ESP_LOGI(TAG,"\nOxym reading time: %3.2f",(curr_reading_time-prev_reading_time)/1000000.0f);
+
             }
             if(heart_err_avg <= 1 && !heart_read_complete){
                 heartsum = (hr_avg_arr[0] + hr_avg_arr[1] + hr_avg_arr[2] + hr_avg_arr[3] + hr_avg_arr[4])/5.0f;
                 hearterror = heart_err_avg;					
-                // ESP_LOGI(TAG,"\nHeart reading time: %3.2f",(curr_reading_time-prev_reading_time)/1000000.0f);
                 heart_read_complete = true;
         }
-            // }
-            
-            // if(err_avg <= 0.5){                                
-            //     for(int i=0;i<5;i++){
-            //         heartsum += hr_avg_arr[i];
-            //         // oxysum += spo_arr[i];
-            //         error = err_avg;
-            //     }
             if((oxy_read_complete && heart_read_complete) || reading_timeout){
                 if(reading_timeout){
                     if(!oxy_read_complete){
@@ -295,20 +285,12 @@ void take_oxy_reading() {
 esp_timer_handle_t periodic_timer;
 
 void init_heartrate()
-// void get_heartrate()
 {
 
     i2c_init();
     i2cdetect();
     isTaskCompleted = false;
-    //configure max30102 with i2c instructions
     max30102_init();    
-    // ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 2000));
-    // xTaskCreate(max30102_task, "max30102_task", 4096, NULL, 10, NULL);
-    // while(!isTaskCompleted){
-    //     vTaskDelay(10/portTICK_PERIOD_MS);             //Wait for readings
-    // }
-    // i2c_driver_delete(i2c_port);
 
 }
 
@@ -320,7 +302,6 @@ void deinit_heartrate(){
 static void periodic_timer_callback(void* arg)
 {
     time_since_start = esp_timer_get_time();
-    // ESP_LOGI(TAG, "Periodic timer called, time since boot: %lld us", time_since_boot);
 }
 
 
@@ -328,7 +309,6 @@ static void periodic_timer_callback(void* arg)
 void hr_timer_init(){
     const esp_timer_create_args_t periodic_timer_args = {
             .callback = &periodic_timer_callback,
-            /* name is optional, but may help identify the timer when debugging */
             .name = "periodic"
     };
     
@@ -337,12 +317,12 @@ void hr_timer_init(){
 
 oxy_reading get_oxy_result(){
 
-    // hr_timer_init();
-    // get_heartrate();
 
     oxy_reading final_readings;
     final_readings.finalheartRate = heartsum;
+    final_readings.heart_error = hearterror;
     final_readings.oxygenLevel = oxysum/5;
+    final_readings.oxy_error = error;
 
     return final_readings;
 }

@@ -23,9 +23,10 @@ reading take_reading(){
         deinit_heartrate();
         reading reading_buffer;
         reading_buffer.heartrate = final_oxyreading.finalheartRate;
+        reading_buffer.heart_precision = 100 - final_oxyreading.heart_error;
         reading_buffer.oxygenLevel = final_oxyreading.oxygenLevel;
+        reading_buffer.oxy_precision = 100 - final_oxyreading.oxy_error;
         reading_buffer.temperature = temp_reading;
         finger_not_placed = true;
-
         return reading_buffer;
 }
