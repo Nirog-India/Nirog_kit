@@ -7,7 +7,9 @@ struct oxy_readingTAG;
 
 typedef struct oxy_readingTAG{
     float finalheartRate;
+    float heart_error;
     float oxygenLevel;
+    float oxy_error;
 }oxy_reading;
 bool isTaskCompleted;
 extern bool finger_not_placed;
