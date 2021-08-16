@@ -1,2 +1,2 @@
-idf_component_register(SRCS "battery_monitor.c" "booth_gatt_server.c" "booth_main.c" "resprate.c" "heartrate.c" "temperature.c" "i2c.c" "MLX90614_API.c" "MLX90614_SMBus_Driver.c" "reading.c"
+idf_component_register(SRCS "system_routine.c" "booth_gatt_server.c" "booth_main.c" "resprate.c" "heartrate.c" "temperature.c" "i2c.c" "MLX90614_API.c" "MLX90614_SMBus_Driver.c" "reading.c"
                     INCLUDE_DIRS ".")
