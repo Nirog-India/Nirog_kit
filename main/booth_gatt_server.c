@@ -20,7 +20,7 @@
 #include "sdkconfig.h"
 #include "heartrate.h"
 #include "reading.h"
-#include "battery_monitor.h"
+#include "system_routine.h"
 
 
 #define GATTS_TAG "GATT_SERVER"
@@ -50,7 +50,7 @@ uint16_t GATTS_CHAR_UUID_ARR[MAX_CHAR_NUM] = {GATTS_CHAR_UUID_READING,GATTS_CHAR
 
 #define MAX_STATUS_INTERVAL 1000000.0f
 
-#define MAX_BATTERY_CAP 3.6    //in V
+#define MAX_BATTERY_CAP 180    //mV (batt range)
 
 reading sensor_readings;
 bool reading_complete = true;
@@ -310,8 +310,8 @@ static void reading_task(void* pvParameters){
 } 
 
 void send_battery_status(){
-    uint8_t battery_status_value = 90;
-    // battery_status_value = raw_bat_reading/MAX_BATTERY_CAP *100;
+    uint8_t battery_status_value=0;
+    battery_status_value = (raw_bat_reading-460)*100/MAX_BATTERY_CAP;
     esp_ble_gatts_send_indicate(curr_client.gatts_if, curr_client.param->write.conn_id, gl_profile_tab[PROFILE_READING_ID].char_handle[2],sizeof(battery_status_value),&battery_status_value, false);
 }
 
@@ -496,6 +496,7 @@ static void gatts_reading_profile_event_handler(esp_gatts_cb_event_t event, esp_
     case ESP_GATTS_STOP_EVT:
         break;
     case ESP_GATTS_CONNECT_EVT: {
+        BLE_DISCONNECTED = false;
         esp_ble_conn_update_params_t conn_params = {0};
         memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
         /* For the IOS system, please reference the apple official documents about the ble connection parameters restrictions. */
@@ -514,6 +515,8 @@ static void gatts_reading_profile_event_handler(esp_gatts_cb_event_t event, esp_
     }
     case ESP_GATTS_DISCONNECT_EVT:
         ESP_LOGI(GATTS_TAG, "ESP_GATTS_DISCONNECT_EVT, disconnect reason 0x%x", param->disconnect.reason);
+        BLE_DISCONNECTED = true;
+
         esp_ble_gap_start_advertising(&adv_params);
         break;
     case ESP_GATTS_CONF_EVT:
