@@ -24,7 +24,7 @@ void take_temperature()
     
     temp_reading_complete = false;
    MLX90614_SMBusInit(MLX90614_SDA_GPIO, MLX90614_SCL_GPIO, 50000); // sda scl and 50kHz
-
+    printf("temp reading started\n");
     //Average out the readings
     float to = 0; // temperature of object
     float ta = 0; // temperature of ambient
@@ -47,7 +47,7 @@ void take_temperature()
     close_connection();
     temp_reading = (obj_temp_sum/(count-11))+temp_offset;
     temp_reading_complete = true;
-    printf("\n Temp reading finished  : %f ",temp_reading);
+    printf("\n Temp reading finished  : %f \n",temp_reading);
     vTaskDelete(NULL);
 }
 

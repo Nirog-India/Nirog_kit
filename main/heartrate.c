@@ -67,7 +67,7 @@ void take_oxy_reading() {
     uint8_t data;
     float spo = 0;
     uint8_t regdata[256];
-    float proximity_thresh = 10000;
+    float proximity_thresh = 40000;
     
     float red[10],ir[10],red_avg[10],del[5];
     float r_avg=0;
@@ -134,7 +134,7 @@ void take_oxy_reading() {
             ir[0] = ir[1]; ir[1] = ir[2];ir[2] = ir[3]; ir[3] = ir[4];
             ir[4] = ir[5]; ir[5] = ir[6];ir[6] = ir[7]; ir[7] = ir[8];
             ir[8] = ir[9]; ir[9] = 256*256*(regdata[6*cnt+3]%4)+ 256*regdata[6*cnt+4]+regdata[6*cnt+5];
-            
+            // printf("red val : %f\n",red[9]);
             if(red[9] > proximity_thresh){
                 float red_DC = (red[0] + red[1] + red[2] + red[3] + red[4] + red[5] + red[6] + red[7] + red[8] + red[9])/10;
                 float ir_DC = (ir[0] + ir[1] + ir[2] + ir[3] + ir[4] + ir[5] + ir[6] + ir[7] + ir[8] + ir[9])/10;
@@ -171,6 +171,7 @@ void take_oxy_reading() {
       
             for(int i=0;i<4;i++) del[i] = del[i+1];
             del[4] = red_avg[9]-red_avg[8];
+            // printf("DEL : %f\n",del[4]);
             if(!peak_detected){
                 peak_detected = true;
             for(int i=0;i<5;i++){
@@ -205,7 +206,7 @@ void take_oxy_reading() {
             }                
         }
         if(valid_read){  
-            finger_not_placed = false;         
+            finger_not_placed = false;        
             count ++;  
             if(!valid_heart_read){
                 valid_heart_read = true;

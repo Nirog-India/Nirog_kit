@@ -52,7 +52,6 @@ void system_routine(){
         //Convert adc_reading to voltage in mV
         uint32_t voltage = esp_adc_cal_raw_to_voltage(adc_reading, adc_chars);
         raw_bat_reading = voltage;
-        printf("Raw: %d\tVoltage: %dmV\n", adc_reading, voltage);
         vTaskDelay(pdMS_TO_TICKS(1000));
 
         //Setup Deep sleep thingie:
@@ -64,7 +63,6 @@ void system_routine(){
             }
             prev_level = switch_level;
         }
-        ESP_LOGI("Ss","switch state %d",switch_level);
         if(pressed && BLE_DISCONNECTED){
             rtc_gpio_pulldown_en(DEEP_SLEEP_WAKE_UP_PIN);
             ESP_ERROR_CHECK(esp_sleep_enable_ext0_wakeup(DEEP_SLEEP_WAKE_UP_PIN,DEFAULT_WAKEUP_LEVEL));
