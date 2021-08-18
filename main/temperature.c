@@ -16,7 +16,7 @@ static const char *TAG = "Server";
 #define MLX90614_SDA_GPIO 4 // sda for MLX90614
 #define MLX90614_SCL_GPIO 5 // scl for MLX90614
 #define TIME_S 35
-const float temp_offset = 2;
+const float temp_offset = 4;
 
 
 void take_temperature()
