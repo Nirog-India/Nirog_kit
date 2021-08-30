@@ -31,8 +31,8 @@ reading take_reading(){
         oxy_reading final_oxyreading = get_oxy_result();
         deinit_heartrate();
         reading reading_buffer;
-        reading_buffer.heartrate = final_oxyreading.finalheartRate;
-        reading_buffer.heart_precision = 100 - final_oxyreading.heart_error;
+        reading_buffer.heartrate = (int)final_oxyreading.finalheartRate;
+        reading_buffer.heart_precision = 100;
         reading_buffer.oxygenLevel = final_oxyreading.oxygenLevel;
         reading_buffer.oxy_precision = 100 - final_oxyreading.oxy_error;
         reading_buffer.temperature = temp_reading;

@@ -287,10 +287,11 @@ void exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble_gatts_c
 void send_result(){
     uint8_t rsp[36];
     char* scan_result_data = (char*)malloc(36);
-    sprintf(scan_result_data,"%3.2f,%3.2f,%3.2f,%3.2f,%3.2f",sensor_readings.heartrate,sensor_readings.heart_precision,sensor_readings.oxygenLevel,sensor_readings.oxy_precision,sensor_readings.temperature);
+    sprintf(scan_result_data,"%d,%3.2f,%3.2f,%3.2f,%3.2f",sensor_readings.heartrate,sensor_readings.heart_precision,sensor_readings.oxygenLevel,sensor_readings.oxy_precision,sensor_readings.temperature);
     for(int i = 0; i<strlen(scan_result_data);i++){
         rsp[i] = scan_result_data[i];
     }
+    ESP_LOGI("GATT_SERVER","Sent to Tab %s ",scan_result_data);
     esp_ble_gatts_send_indicate(curr_client.gatts_if, curr_client.param->write.conn_id, gl_profile_tab[PROFILE_READING_ID].char_handle[0],strlen(scan_result_data),&rsp, false);
 }
 
@@ -312,6 +313,7 @@ static void reading_task(void* pvParameters){
 void send_battery_status(){
     uint8_t battery_status_value=0;
     battery_status_value = (raw_bat_reading-460)*100/MAX_BATTERY_CAP;
+    // printf("raw : %d, bat per : %d\n",(int)raw_bat_reading,(int)battery_status_value);
     esp_ble_gatts_send_indicate(curr_client.gatts_if, curr_client.param->write.conn_id, gl_profile_tab[PROFILE_READING_ID].char_handle[2],sizeof(battery_status_value),&battery_status_value, false);
 }
 

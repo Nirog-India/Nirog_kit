@@ -3,7 +3,7 @@
 
 
 typedef struct reading_tag{
-    float heartrate;
+    int heartrate;
     float heart_precision;
     float oxygenLevel;
     float oxy_precision;

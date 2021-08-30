@@ -6,7 +6,7 @@
 struct oxy_readingTAG;
 
 typedef struct oxy_readingTAG{
-    float finalheartRate;
+    int finalheartRate;
     float heart_error;
     float oxygenLevel;
     float oxy_error;
